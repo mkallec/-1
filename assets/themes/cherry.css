@@ -1,0 +1,79 @@
+/* ===== Theme: cherry ===== */
+/* Auto-generated theme variant */
+
+:root {
+  --color-primary: #e11d48;
+  --color-primary-dark: #be123c;
+  --color-accent: #fb7185;
+  --color-bg: #fff1f2;
+  --color-text: #3f0d12;
+  --color-muted: #9f5460;
+  --font-family: 'PingFang SC', 'Microsoft YaHei', 'STSong', serif;
+  --radius: 8px;
+  --shadow: 0 2px 10px rgba(225,29,72,0.10);
+  --gradient-brand: linear-gradient(135deg, #e11d48, #be123c);
+  --gradient-hero: linear-gradient(135deg, #e11d48dd, #be123cee);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+}
+
+/* 覆盖 base.css 中的品牌色 */
+.brand { color: var(--color-primary); }
+.brand-icon {
+  background: var(--gradient-brand);
+  color: #fff;
+}
+.site-header {
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow);
+}
+.hero {
+  background: var(--gradient-hero);
+}
+.hero-content h1 { color: #fff; }
+.hero-actions .primary-button,
+.hero-actions .primary-btn,
+a.primary-btn,
+.primary-btn {
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+}
+.hero-actions .ghost-button,
+.ghost-button {
+  border-color: #fff;
+  color: #fff;
+  border-radius: var(--radius);
+}
+.movie-card {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: #fff;
+}
+.movie-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.category-tile {
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.chip {
+  background: #e11d481a;
+  color: var(--color-primary);
+  border-radius: 20px;
+}
+footer {
+  background: var(--gradient-brand);
+  color: #fff;
+}
+a { color: var(--color-primary); }
+a:hover { color: var(--color-primary-dark); }
+.nav-link.active, .nav-link.is-active { color: var(--color-accent); }
+.movie-card-body h2 a { color: var(--color-text); }
+.eyebrow { color: var(--color-muted); }
