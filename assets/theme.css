@@ -1,79 +1,37 @@
-/* ===== Theme: ocean ===== */
-/* Auto-generated theme variant */
-
-:root {
-  --color-primary: #0ea5e9;
-  --color-primary-dark: #0284c7;
-  --color-accent: #06b6d4;
-  --color-bg: #f0f9ff;
-  --color-text: #1e293b;
-  --color-muted: #64748b;
-  --font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --radius: 8px;
-  --shadow: 0 2px 12px rgba(14,165,233,0.12);
-  --gradient-brand: linear-gradient(135deg, #0ea5e9, #0284c7);
-  --gradient-hero: linear-gradient(135deg, #0ea5e9dd, #0284c7ee);
+/* Theme: ink (13/30) Light header:solid btn:sharp */
+:root{
+  --p:#000; --s:#333; --a:#666; --bg:#fff; --txt:#111; --muted:#888;
+  --font:"PingFang SC","Microsoft YaHei",sans-serif; --radius:0px; --shadow:0 0 0 1px #e5e5e5;
+  --grad:linear-gradient(135deg,#000,#333);
+  --card-bg:#ffffff; --card-border:rgba(0,0,0,.06); --btn-radius:3px;
+  --hdr-bg:#000;
 }
-
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-family);
+body{background:var(--bg);color:var(--txt);font-family:var(--font);}
+.site-header{background:var(--hdr-bg);box-shadow:var(--shadow);}
+.brand{color:#000;}
+.brand-icon{background:var(--grad);color:#fff;border-radius:var(--radius);}
+.hero,.detail-hero{background:linear-gradient(135deg,#000dd,#333ee);}
+.hero-content h1,.detail-hero h1,.hero-copy h1{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3);}
+.primary-button,.primary-btn,.btn-primary,a.primary-btn{
+  background:var(--grad);border-radius:var(--btn-radius);box-shadow:var(--shadow);
+  border:none;color:#fff;font-weight:700;transition:all .2s;
 }
-
-/* 覆盖 base.css 中的品牌色 */
-.brand { color: var(--color-primary); }
-.brand-icon {
-  background: var(--gradient-brand);
-  color: #fff;
+.primary-button:hover,.primary-btn:hover{transform:translateY(-2px);filter:brightness(1.1);}
+.ghost-button,.secondary-button,.secondary-btn,.btn-ghost{
+  border:2px solid #fff;color:#fff;border-radius:var(--btn-radius);background:transparent;font-weight:600;
 }
-.site-header {
-  background: var(--gradient-brand);
-  box-shadow: var(--shadow);
+.movie-card,.category-tile,.player-card,.detail-card,.rank-row{
+  background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:var(--radius);box-shadow:var(--shadow);
 }
-.hero {
-  background: var(--gradient-hero);
+.movie-card:hover,.category-tile:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.18);}
+.chip,.tag-row span{
+  background:#0001a;color:var(--p);border-radius:20px;font-size:13px;padding:4px 12px;
 }
-.hero-content h1 { color: #fff; }
-.hero-actions .primary-button,
-.hero-actions .primary-btn,
-a.primary-btn,
-.primary-btn {
-  background: var(--gradient-brand);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius);
-}
-.hero-actions .ghost-button,
-.ghost-button {
-  border-color: #fff;
-  color: #fff;
-  border-radius: var(--radius);
-}
-.movie-card {
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  background: #fff;
-}
-.movie-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-.category-tile {
-  border-radius: var(--radius);
-  background: #fff;
-  box-shadow: var(--shadow);
-}
-.chip {
-  background: #0ea5e91a;
-  color: var(--color-primary);
-  border-radius: 20px;
-}
-footer {
-  background: var(--gradient-brand);
-  color: #fff;
-}
-a { color: var(--color-primary); }
-a:hover { color: var(--color-primary-dark); }
-.nav-link.active, .nav-link.is-active { color: var(--color-accent); }
-.movie-card-body h2 a { color: var(--color-text); }
-.eyebrow { color: var(--color-muted); }
+footer{background:var(--grad);color:#fff;}
+a{color:var(--p);}a:hover{color:var(--s);}
+.nav-link.active,.nav-link.is-active,.mobile-link.is-active{color:var(--a);font-weight:700;}
+.movie-card-body h2 a{color:var(--txt);}
+.eyebrow,.hero-kicker{color:var(--muted);text-transform:uppercase;font-size:12px;letter-spacing:.5px;}
+input,textarea,select{border-radius:var(--radius);border:1px solid var(--card-border);font-family:var(--font);}
+::selection{background:var(--p);color:#fff;}
