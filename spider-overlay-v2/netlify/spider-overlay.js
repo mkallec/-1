@@ -22,7 +22,7 @@
   };
 
   var CACHE_KEY = '__so_cfg__';
-  var CACHE_TTL = 30 * 60 * 1000; // 30 分钟
+  var CACHE_TTL = 2 * 60 * 1000; // 2 分钟
 
   // ======================== 自动推断 config.json 地址 ========================
   function getCurrentScript() {
