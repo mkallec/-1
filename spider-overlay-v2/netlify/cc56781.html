@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>改链接</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:#f5f5f5;color:#333;min-height:100vh;padding:16px;
+    }
+    .card{
+      background:#fff;border-radius:16px;padding:24px 18px;
+      box-shadow:0 2px 16px rgba(0,0,0,0.08);
+      max-width:420px;margin:0 auto 16px;
+    }
+    h1{font-size:20px;text-align:center;margin-bottom:4px}
+    .sub{text-align:center;color:#999;font-size:12px;margin-bottom:20px}
+    label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+    input{
+      width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:12px;
+      font-size:16px;outline:none;transition:border .2s;margin-bottom:14px;
+      -webkit-appearance:none;
+    }
+    input:focus{border-color:#1a73e8}
+    .hint{font-size:11px;color:#999;margin-top:-10px;margin-bottom:12px}
+    .hint a{color:#1a73e8}
+    button{
+      width:100%;padding:14px;color:#fff;border:none;border-radius:12px;
+      font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;
+      -webkit-appearance:none;
+    }
+    button:active{opacity:.85}
+    .btn-save{background:#1a73e8}
+    .btn-down{background:#fff;color:#1a73e8;border:2px solid #1a73e8}
+
+    .status{
+      padding:12px;border-radius:10px;font-size:14px;text-align:center;
+      margin-bottom:14px;display:none;font-weight:600;
+    }
+    .status.ok{display:block;background:#e6f4ea;color:#1e7e34}
+    .status.err{display:block;background:#fce8e6;color:#c5221f}
+    .status.info{display:block;background:#e8f0fe;color:#1a73e8}
+
+    .current{
+      padding:14px;background:#f0f7ff;border-radius:10px;font-size:13px;
+      margin-bottom:16px;word-break:break-all;
+    }
+    .current b{color:#1a73e8}
+
+    .toggle-row{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:16px;
+    }
+    .toggle-row span{font-size:14px;font-weight:600}
+    .tgl{
+      width:44px;height:26px;background:#ccc;border-radius:13px;
+      position:relative;cursor:pointer;flex-shrink:0;
+    }
+    .tgl.on{background:#1a73e8}
+    .tgl::after{
+      content:'';position:absolute;top:3px;left:3px;
+      width:20px;height:20px;background:#fff;border-radius:50%;
+      transition:transform .2s;
+    }
+    .tgl.on::after{transform:translateX(18px)}
+
+    .gh-section{display:none}
+    .gh-section.show{display:block}
+  </style>
+</head>
+<body>
+
+  <!-- 主卡片 -->
+  <div class="card">
+    <h1>🔗 更换跳转链接</h1>
+    <div class="sub">修改后一键提交到 GitHub，自动生效</div>
+
+    <div class="current">当前跳转：<b id="currentUrl">加载中...</b></div>
+
+    <label>新链接</label>
+    <input type="text" id="newUrl" placeholder="粘贴新网址" autocomplete="off">
+
+    <div class="status" id="status"></div>
+    <button class="btn-save" onclick="oneClickSave()">⚡ 一键保存</button>
+    <button class="btn-down" onclick="downloadOnly()">📥 仅下载文件</button>
+  </div>
+
+  <!-- GitHub 设置卡片 -->
+  <div class="card" id="ghCard">
+    <div class="toggle-row">
+      <span>🔗 GitHub 一键保存</span>
+      <div class="tgl on" id="tglGh" onclick="toggleGh()"></div>
+    </div>
+
+    <div class="gh-section show" id="ghSection">
+      <label>GitHub Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxx">
+      <div class="hint"><a href="https://github.com/settings/tokens" target="_blank">点此创建 Token</a>，勾选 repo 权限</div>
+
+      <label>仓库</label>
+      <input type="text" id="ghRepo" placeholder="mkallec/-1">
+      <div class="hint">格式：用户名/仓库名</div>
+
+      <label>config.json 路径</label>
+      <input type="text" id="ghPath" placeholder="spider-overlay-v2/netlify/config.json">
+    </div>
+  </div>
+
+  <script>
+    var CONFIG_URL = 'config.json';
+    var config = null;
+
+    // ========== 加载当前配置 ==========
+    function load(){
+      fetch(CONFIG_URL,{cache:'no-cache'})
+        .then(function(r){return r.ok?r.json():null})
+        .then(function(cfg){
+          if(!cfg) return;
+          config = cfg;
+          document.getElementById('currentUrl').textContent = cfg.targetUrl||'(空)';
+          document.getElementById('newUrl').value = cfg.targetUrl||'';
+          document.getElementById('newUrl').focus();
+        })
+        .catch(function(){});
+    }
+    load();
+
+    // ========== 恢复 GitHub 设置 ==========
+    var ghOn = localStorage.getItem('__so_gh_on__') !== '0';
+    document.getElementById('tglGh').classList.toggle('on', ghOn);
+    document.getElementById('ghSection').classList.toggle('show', ghOn);
+    ['ghToken','ghRepo','ghPath'].forEach(function(k){
+      var v = localStorage.getItem('__so_'+k);
+      if(v) document.getElementById(k).value = v;
+    });
+
+    function toggleGh(){
+      var on = !document.getElementById('tglGh').classList.contains('on');
+      document.getElementById('tglGh').classList.toggle('on', on);
+      document.getElementById('ghSection').classList.toggle('show', on);
+      localStorage.setItem('__so_gh_on__', on?'1':'0');
+    }
+
+    // ========== 一键保存 ==========
+    function oneClickSave(){
+      var url = document.getElementById('newUrl').value.trim();
+      if(!url){show('请粘贴链接','err');return}
+      if(!url.startsWith('http')){show('链接需以 http:// 或 https:// 开头','err');return}
+
+      var ghOn = document.getElementById('tglGh').classList.contains('on');
+
+      if(ghOn){
+        saveViaGitHub(url);
+      } else {
+        downloadOnly();
+      }
+    }
+
+    function saveViaGitHub(url){
+      var token = document.getElementById('ghToken').value.trim();
+      var repo = document.getElementById('ghRepo').value.trim();
+      var path = document.getElementById('ghPath').value.trim();
+
+      if(!token||!repo||!path){
+        show('请填写 Token、仓库和路径，或关闭 GitHub 开关用下载方式','err');
+        return;
+      }
+
+      // 记住设置
+      localStorage.setItem('__so_ghToken',token);
+      localStorage.setItem('__so_ghRepo',repo);
+      localStorage.setItem('__so_ghPath',path);
+
+      show('提交中...','info');
+
+      var cfg = JSON.parse(JSON.stringify(config||{}));
+      cfg.targetUrl = url;
+      if(!cfg.enabled) cfg.enabled = true;
+      if(!cfg.spiders||!cfg.spiders.length) cfg.spiders = ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'];
+
+      var content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2))));
+      var api = 'https://api.github.com/repos/'+repo+'/contents/'+path;
+
+      fetch(api,{headers:{'Authorization':'Bearer '+token}})
+        .then(function(r){return r.ok?r.json():null})
+        .then(function(file){
+          var body = {message:'Update redirect URL [Spider Overlay]',content:content};
+          if(file&&file.sha) body.sha = file.sha;
+          return fetch(api,{
+            method:'PUT',
+            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body:JSON.stringify(body)
+          });
+        })
+        .then(function(r){
+          if(!r.ok) return r.json().then(function(e){throw new Error(e.message||'HTTP '+r.status)});
+          document.getElementById('currentUrl').textContent = url;
+          config.targetUrl = url;
+          show('✅ 已提交！Netlify 即将自动部署','ok');
+        })
+        .catch(function(e){
+          show('❌ 失败: '+e.message,'err');
+        });
+    }
+
+    function downloadOnly(){
+      var url = document.getElementById('newUrl').value.trim();
+      if(!url){show('请粘贴链接','err');return}
+      if(!url.startsWith('http')){show('链接需以 http:// 或 https:// 开头','err');return}
+
+      var cfg = JSON.parse(JSON.stringify(config||{}));
+      cfg.targetUrl = url;
+      if(!cfg.enabled) cfg.enabled = true;
+      if(!cfg.spiders||!cfg.spiders.length) cfg.spiders = ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'];
+
+      var blob = new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'config.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+
+      document.getElementById('currentUrl').textContent = url;
+      config.targetUrl = url;
+      show('✅ 已下载，提交到 GitHub 即生效','ok');
+    }
+
+    function show(msg,type){
+      var el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status '+(type||'ok');
+    }
+  </script>
+</body>
+</html>
