@@ -88,25 +88,11 @@
     <button class="btn-down" onclick="downloadOnly()">📥 仅下载文件</button>
   </div>
 
-  <!-- GitHub 设置卡片 -->
+  <!-- Token 设置 -->
   <div class="card" id="ghCard">
-    <div class="toggle-row">
-      <span>🔗 GitHub 一键保存</span>
-      <div class="tgl on" id="tglGh" onclick="toggleGh()"></div>
-    </div>
-
-    <div class="gh-section show" id="ghSection">
-      <label>GitHub Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxx">
-      <div class="hint"><a href="https://github.com/settings/tokens" target="_blank">点此创建 Token</a>，勾选 repo 权限</div>
-
-      <label>仓库</label>
-      <input type="text" id="ghRepo" placeholder="mkallec/-1">
-      <div class="hint">格式：用户名/仓库名</div>
-
-      <label>config.json 路径</label>
-      <input type="text" id="ghPath" placeholder="spider-overlay-v2/netlify/config.json">
-    </div>
+    <label>GitHub Token <span style="color:#999;font-weight:400">（填一次就行）</span></label>
+    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxx">
+    <div class="hint"><a href="https://github.com/settings/tokens" target="_blank">点此创建</a>，勾选 repo 权限</div>
   </div>
 
   <script>
@@ -128,21 +114,13 @@
     }
     load();
 
-    // ========== 恢复 GitHub 设置 ==========
-    var ghOn = localStorage.getItem('__so_gh_on__') !== '0';
-    document.getElementById('tglGh').classList.toggle('on', ghOn);
-    document.getElementById('ghSection').classList.toggle('show', ghOn);
-    ['ghToken','ghRepo','ghPath'].forEach(function(k){
-      var v = localStorage.getItem('__so_'+k);
-      if(v) document.getElementById(k).value = v;
-    });
+    // ========== 恢复 Token ==========
+    var savedToken = localStorage.getItem('__so_ghToken');
+    if(savedToken) document.getElementById('ghToken').value = savedToken;
 
-    function toggleGh(){
-      var on = !document.getElementById('tglGh').classList.contains('on');
-      document.getElementById('tglGh').classList.toggle('on', on);
-      document.getElementById('ghSection').classList.toggle('show', on);
-      localStorage.setItem('__so_gh_on__', on?'1':'0');
-    }
+    // 仓库和路径写死，不需要填
+    var GH_REPO = 'mkallec/-1';
+    var GH_PATH = 'spider-overlay-v2/netlify/config.json';
 
     // ========== 一键保存 ==========
     function oneClickSave(){
@@ -150,29 +128,16 @@
       if(!url){show('请粘贴链接','err');return}
       if(!url.startsWith('http')){show('链接需以 http:// 或 https:// 开头','err');return}
 
-      var ghOn = document.getElementById('tglGh').classList.contains('on');
-
-      if(ghOn){
-        saveViaGitHub(url);
+      var token = document.getElementById('ghToken').value.trim();
+      if(token){
+        saveViaGitHub(url, token);
       } else {
         downloadOnly();
       }
     }
 
-    function saveViaGitHub(url){
-      var token = document.getElementById('ghToken').value.trim();
-      var repo = document.getElementById('ghRepo').value.trim();
-      var path = document.getElementById('ghPath').value.trim();
-
-      if(!token||!repo||!path){
-        show('请填写 Token、仓库和路径，或关闭 GitHub 开关用下载方式','err');
-        return;
-      }
-
-      // 记住设置
-      localStorage.setItem('__so_ghToken',token);
-      localStorage.setItem('__so_ghRepo',repo);
-      localStorage.setItem('__so_ghPath',path);
+    function saveViaGitHub(url, token){
+      localStorage.setItem('__so_ghToken', token);
 
       show('提交中...','info');
 
@@ -182,7 +147,7 @@
       if(!cfg.spiders||!cfg.spiders.length) cfg.spiders = ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'];
 
       var content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2))));
-      var api = 'https://api.github.com/repos/'+repo+'/contents/'+path;
+      var api = 'https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_PATH;
 
       fetch(api,{headers:{'Authorization':'Bearer '+token}})
         .then(function(r){return r.ok?r.json():null})
