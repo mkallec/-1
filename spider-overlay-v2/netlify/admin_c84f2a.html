@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Config Panel</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+
+    /* 登录 */
+    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)}
+    .login-box{background:#fff;padding:40px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.2);width:380px;max-width:90vw}
+    .login-box h1{text-align:center;margin-bottom:8px;font-size:22px;color:#1a1a2e}
+    .login-box .sub{text-align:center;color:#888;margin-bottom:24px;font-size:13px}
+    .login-box label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+    .login-box input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;margin-bottom:20px;outline:none;transition:border .2s}
+    .login-box input:focus{border-color:#1a1a2e}
+    .login-box button{width:100%;padding:12px;background:#1a1a2e;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}
+    .login-box .err{color:#e74c3c;text-align:center;margin-top:12px;font-size:13px;display:none}
+
+    /* 主面板 */
+    .app{display:none;max-width:800px;margin:0 auto;padding:30px 20px}
+    .app.visible{display:block}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;flex-wrap:wrap;gap:15px}
+    .header h1{font-size:24px;color:#1a1a2e}
+    .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:20px}
+    .card h2{font-size:17px;margin-bottom:18px;color:#1a1a2e;border-bottom:2px solid #1a1a2e;padding-bottom:8px}
+    .form-group{margin-bottom:18px}
+    .form-group label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+    .form-group input,.form-group textarea{width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;font-family:inherit}
+    .form-group input:focus,.form-group textarea:focus{border-color:#1a1a2e}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .form-group .hint{font-size:12px;color:#999;margin-top:4px}
+    .form-row{display:flex;gap:15px;flex-wrap:wrap}
+    .form-row .form-group{flex:1;min-width:120px}
+
+    .toggle-wrap{display:flex;align-items:center;gap:10px}
+    .toggle{width:48px;height:26px;background:#ccc;border-radius:13px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+    .toggle.on{background:#27ae60}
+    .toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}
+    .toggle.on::after{transform:translateX(22px)}
+
+    .spider-tags{display:flex;flex-wrap:wrap;gap:8px}
+    .spider-tag{background:#eef;color:#556;padding:5px 12px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:6px}
+    .spider-tag .remove{cursor:pointer;font-weight:bold;color:#999}
+    .spider-tag .remove:hover{color:#e74c3c}
+    .add-spider{display:flex;gap:8px;margin-top:8px}
+    .add-spider input{flex:1}
+    .add-spider button{padding:8px 16px;background:#1a1a2e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap}
+
+    .btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:#1a1a2e;color:#fff}
+    .btn-primary:hover{opacity:.9}
+    .btn-success{background:#27ae60;color:#fff}
+    .btn-success:hover{background:#219a52}
+    .btn-outline{background:#fff;color:#1a1a2e;border:2px solid #1a1a2e}
+    .btn-outline:hover{background:#1a1a2e;color:#fff}
+    .btn-danger{background:#fff;color:#e74c3c;border:2px solid #e74c3c}
+
+    .toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;color:#fff;font-weight:600;z-index:99999;animation:slideIn .3s;display:none}
+    .toast.success{background:#27ae60}
+    .toast.error{background:#e74c3c}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+    .preview-box{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code','Consolas',monospace;font-size:12px;overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto}
+
+    .save-tabs{display:flex;gap:0;margin-bottom:16px}
+    .save-tab{padding:8px 16px;background:#eee;cursor:pointer;font-size:13px;border:2px solid #ddd;font-weight:600}
+    .save-tab:first-child{border-radius:8px 0 0 8px}
+    .save-tab:last-child{border-radius:0 8px 8px 0;border-left:none}
+    .save-tab.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+
+    .github-config{background:#f8f9fa;padding:16px;border-radius:8px;margin-top:8px}
+    .github-config .note{font-size:12px;color:#888;margin-top:8px}
+  </style>
+</head>
+<body>
+
+<!-- ==================== 登录 ==================== -->
+<div class="login-page" id="loginPage">
+  <div class="login-box">
+    <h1>🔐 Config Panel</h1>
+    <div class="sub">Spider Overlay 配置管理</div>
+    <label>管理密码</label>
+    <input type="password" id="pwdInput" placeholder="请输入密码" autofocus>
+    <button onclick="doLogin()">登 录</button>
+    <div class="err" id="loginErr">密码错误</div>
+  </div>
+</div>
+
+<!-- ==================== 主面板 ==================== -->
+<div class="app" id="appPanel">
+  <div class="header">
+    <h1>🕷 配置管理</h1>
+    <div class="btns">
+      <button class="btn btn-outline" onclick="doLogout()">🔒 退出</button>
+    </div>
+  </div>
+
+  <!-- 基本设置 -->
+  <div class="card">
+    <h2>📌 基本设置</h2>
+    <div class="form-row">
+      <div class="form-group" style="flex:3">
+        <label>跳转目标 URL</label>
+        <input type="text" id="cfgTargetUrl" placeholder="https://www.baidu.com">
+        <div class="hint">非爬虫访客将被全屏 iframe 覆盖到此地址</div>
+      </div>
+      <div class="form-group" style="flex:0 0 auto;min-width:100px">
+        <label>启用状态</label>
+        <div class="toggle-wrap">
+          <div class="toggle on" id="toggleEnabled" onclick="toggleSwitch('enabled')"></div>
+          <span id="lblEnabled" style="font-size:13px">开启</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>z-index</label>
+        <input type="number" id="cfgZIndex" placeholder="9999">
+      </div>
+      <div class="form-group">
+        <label>背景色</label>
+        <input type="text" id="cfgBgColor" placeholder="white">
+      </div>
+    </div>
+  </div>
+
+  <!-- 爬虫列表 -->
+  <div class="card">
+    <h2>🤖 爬虫 UA 关键词</h2>
+    <div class="hint" style="margin-bottom:12px">包含以下任一关键词的 UA 将被判定为爬虫，<strong>放行不覆盖</strong></div>
+    <div class="spider-tags" id="spiderTags"></div>
+    <div class="add-spider">
+      <input type="text" id="newSpider" placeholder="输入 UA 关键词，如：googlebot">
+      <button onclick="addSpider()">＋ 添加</button>
+    </div>
+  </div>
+
+  <!-- 保存 -->
+  <div class="card">
+    <h2>💾 保存配置</h2>
+
+    <div class="save-tabs">
+      <div class="save-tab active" data-method="download" onclick="switchSave('download')">📥 下载文件</div>
+      <div class="save-tab" data-method="github" onclick="switchSave('github')">🔗 GitHub API</div>
+    </div>
+
+    <!-- 下载 -->
+    <div id="panel-download">
+      <p style="color:#666;margin-bottom:12px">下载 <code>config.json</code>，提交到 GitHub 仓库，Netlify 自动部署。</p>
+      <button class="btn btn-primary" onclick="downloadConfig()">📥 下载 config.json</button>
+    </div>
+
+    <!-- GitHub API -->
+    <div id="panel-github" style="display:none">
+      <p style="color:#666;margin-bottom:12px">通过 GitHub API 直接提交到仓库，Netlify 自动部署。</p>
+      <div class="github-config">
+        <div class="form-group">
+          <label>GitHub Token</label>
+          <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+          <div class="hint">在 <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a> 创建，需要 repo 权限</div>
+        </div>
+        <div class="form-group">
+          <label>仓库路径</label>
+          <input type="text" id="ghRepo" placeholder="用户名/仓库名，如：my/repo">
+        </div>
+        <div class="form-group">
+          <label>config.json 在仓库中的路径</label>
+          <input type="text" id="ghPath" placeholder="config.json">
+          <div class="hint">如果放在子目录，如：<code>spider-overlay/config.json</code></div>
+        </div>
+        <button class="btn btn-success" onclick="saveViaGitHub()">💾 提交到 GitHub</button>
+        <span id="ghStatus" style="margin-left:10px;font-size:13px"></span>
+        <div class="note">⚠ Token 只保存在当前浏览器的 localStorage 中</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 预览 -->
+  <div class="card">
+    <h2>📄 config.json 预览</h2>
+    <div class="preview-box" id="jsonPreview"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ======================== 密码 ========================
+// 修改默认密码：在控制台执行 hashPassword('你的新密码')，替换下面的值
+function hashPassword(pwd) {
+  var salt = 'spider_overlay_salt_2026';
+  var raw = salt + pwd + salt;
+  var hash = 0;
+  for (var i = 0; i < raw.length; i++) {
+    var chr = raw.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return 'so_' + Math.abs(hash).toString(36) + '_' + raw.length;
+}
+
+var STORED_HASH = hashPassword('admin123');
+
+function doLogin() {
+  var pwd = document.getElementById('pwdInput').value;
+  if (!pwd) return;
+  if (hashPassword(pwd) === STORED_HASH) {
+    sessionStorage.setItem('__so_admin__', '1');
+    showApp();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('pwdInput').value = '';
+  }
+}
+
+document.getElementById('pwdInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  sessionStorage.removeItem('__so_admin__');
+  document.getElementById('appPanel').classList.remove('visible');
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('pwdInput').value = '';
+}
+
+// ======================== 配置管理 ========================
+var config = {};
+var saveMethod = 'download';
+
+var DEFAULT_CONFIG = {
+  targetUrl: 'https://www.baidu.com',
+  enabled: true,
+  spiders: ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'],
+  zIndex: 9999,
+  bgColor: 'white'
+};
+
+function loadConfig() {
+  fetch('config.json', { cache: 'no-cache' })
+    .then(function(r) { return r.ok ? r.json() : DEFAULT_CONFIG; })
+    .catch(function() { return DEFAULT_CONFIG; })
+    .then(function(cfg) { config = cfg; renderAll(); });
+}
+
+function renderAll() {
+  document.getElementById('cfgTargetUrl').value = config.targetUrl || '';
+  document.getElementById('cfgZIndex').value = config.zIndex || 9999;
+  document.getElementById('cfgBgColor').value = config.bgColor || 'white';
+
+  var on = config.enabled !== false;
+  document.getElementById('toggleEnabled').classList.toggle('on', on);
+  document.getElementById('lblEnabled').textContent = on ? '开启' : '关闭';
+
+  renderSpiders();
+  updatePreview();
+
+  // 恢复 GitHub 设置
+  ['ghToken','ghRepo','ghPath'].forEach(function(k) {
+    var v = localStorage.getItem('__so_' + k);
+    if (v) document.getElementById(k).value = v;
+  });
+}
+
+function renderSpiders() {
+  var spiders = config.spiders || [];
+  document.getElementById('spiderTags').innerHTML = spiders.map(function(s, i) {
+    return '<span class="spider-tag">' + esc(s) + '<span class="remove" onclick="removeSpider(' + i + ')">×</span></span>';
+  }).join('');
+}
+
+function addSpider() {
+  var input = document.getElementById('newSpider');
+  var val = input.value.trim().toLowerCase();
+  if (!val) return;
+  if (!config.spiders) config.spiders = [];
+  if (config.spiders.indexOf(val) > -1) { toast('已存在', 'error'); return; }
+  config.spiders.push(val);
+  input.value = '';
+  renderSpiders();
+  updatePreview();
+}
+
+function removeSpider(i) { config.spiders.splice(i, 1); renderSpiders(); updatePreview(); }
+
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('newSpider');
+  if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') addSpider(); });
+});
+
+function toggleSwitch() {
+  config.enabled = !config.enabled;
+  document.getElementById('toggleEnabled').classList.toggle('on', config.enabled);
+  document.getElementById('lblEnabled').textContent = config.enabled ? '开启' : '关闭';
+  updatePreview();
+}
+
+// 实时同步
+['cfgTargetUrl','cfgZIndex','cfgBgColor'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', function() {
+    var k = id === 'cfgTargetUrl' ? 'targetUrl' : (id === 'cfgZIndex' ? 'zIndex' : 'bgColor');
+    config[k] = id === 'cfgZIndex' ? (parseInt(el.value) || 9999) : el.value;
+    updatePreview();
+  });
+});
+
+function getCurrentConfig() {
+  return {
+    targetUrl: document.getElementById('cfgTargetUrl').value || config.targetUrl,
+    enabled: config.enabled,
+    spiders: config.spiders || [],
+    zIndex: parseInt(document.getElementById('cfgZIndex').value) || 9999,
+    bgColor: document.getElementById('cfgBgColor').value || 'white'
+  };
+}
+
+function updatePreview() {
+  document.getElementById('jsonPreview').textContent = JSON.stringify(getCurrentConfig(), null, 2);
+}
+
+// ======================== 保存方式 ========================
+function switchSave(m) {
+  saveMethod = m;
+  document.querySelectorAll('.save-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.method === m); });
+  document.getElementById('panel-download').style.display = m === 'download' ? 'block' : 'none';
+  document.getElementById('panel-github').style.display = m === 'github' ? 'block' : 'none';
+}
+
+// 方式一：下载
+function downloadConfig() {
+  var cfg = getCurrentConfig();
+  var blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'config.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('下载完成，请提交到 GitHub 仓库');
+}
+
+// 方式二：GitHub API
+function saveViaGitHub() {
+  var token = document.getElementById('ghToken').value.trim();
+  var repo = document.getElementById('ghRepo').value.trim();
+  var path = document.getElementById('ghPath').value.trim() || 'config.json';
+  var statusEl = document.getElementById('ghStatus');
+
+  if (!token || !repo) { toast('请填写 Token 和仓库路径', 'error'); return; }
+
+  // 记住
+  localStorage.setItem('__so_ghToken', token);
+  localStorage.setItem('__so_ghRepo', repo);
+  localStorage.setItem('__so_ghPath', path);
+
+  statusEl.textContent = '提交中...';
+
+  var cfg = getCurrentConfig();
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2))));
+
+  // 先获取文件 SHA（如果存在）
+  var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
+  var headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+  fetch(apiBase, { headers: headers })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(file) {
+      var body = { message: 'Update config.json [Spider Overlay]', content: content };
+      if (file && file.sha) body.sha = file.sha;
+      return fetch(apiBase, { method: 'PUT', headers: headers, body: JSON.stringify(body) });
+    })
+    .then(function(r) {
+      if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || 'HTTP ' + r.status); });
+      return r.json();
+    })
+    .then(function() {
+      statusEl.textContent = '✅ 已提交，Netlify 将自动部署';
+      toast('配置已提交到 GitHub，Netlify 即将自动部署');
+    })
+    .catch(function(err) {
+      statusEl.textContent = '❌ 失败';
+      toast('提交失败: ' + err.message, 'error');
+    });
+}
+
+// ======================== 工具 ========================
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'success');
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function esc(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
+
+function showApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appPanel').classList.add('visible');
+  loadConfig();
+}
+
+if (sessionStorage.getItem('__so_admin__') === '1') showApp();
+
+// 暴露密码工具
+window.hashPassword = hashPassword;
+console.log('%c🔐 修改默认密码：%cSTORED_HASH = hashPassword(\'你的新密码\')',
+  'font-size:14px;', 'color:#888;');
+</script>
+
+</body>
+</html>
