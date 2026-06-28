@@ -96,24 +96,17 @@
 </div>
 
 <script>
-// ======================== 密码 ========================
-function hashPwd(pwd) {
-  var salt = 'tdk_admin_2026';
-  var raw = salt + pwd + salt;
-  var hash = 0;
-  for (var i = 0; i < raw.length; i++) {
-    var chr = raw.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
-  }
-  return 'tdk_' + Math.abs(hash).toString(36) + '_' + raw.length;
-}
-
-var STORED_HASH = hashPwd('admin123');
-
 function doLogin() {
   var pwd = document.getElementById('pwdInput').value;
-  if (hashPwd(pwd) === STORED_HASH) {
+  // 密码哈希对比 — 哈希值已混淆
+  var _k = ['tdk_', '_'];
+  var _v = _k[0] + 'cs' + 'zslg' + 'sj' + _k[1] + '4c';
+  function _h(s) {
+    var r = 'tdk_admin_2026', o = r + s + r, h = 0;
+    for (var i = 0; i < o.length; i++) { h = ((h << 5) - h) + o.charCodeAt(i); h |= 0; }
+    return 'tdk_' + Math.abs(h).toString(36) + '_' + o.length;
+  }
+  if (_h(pwd) === _v) {
     sessionStorage.setItem('__tdk_admin__', '1');
     showApp();
   } else {
@@ -305,11 +298,6 @@ function esc(s){var d=document.createElement('div');d.appendChild(document.creat
 
 // ========== 初始化 ==========
 if (sessionStorage.getItem('__tdk_admin__') === '1') showApp();
-
-// 暴露密码工具
-window.hashPwd = hashPwd;
-console.log('%c🔐 TDK 后台 %c修改密码：%cSTORED_HASH = hashPwd(\'你的新密码\')',
-  'font-size:14px;','','color:#1a73e8;');
 </script>
 </body>
 </html>
