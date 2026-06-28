@@ -21,17 +21,20 @@
     ]
   },
   "projects": {
-    "_site_rehade_style": {
-      "domains": ["jxwfx.cn"]
-    },
-    "project": {
+    "_fwv0_cinema": {
       "domains": ["hwksjo.cn"]
     },
-    "_fw3_cinema": {
-      "domains": ["mzkznsy.cn"]
+    "_fw2_cinema": {
+      "domains": ["jxwfx.cn"]
+    },
+    "_fw1_cinema": {
+      "domains": []
     },
     "_fw4_indigo": {
       "domains": ["ztrisj.cn"]
+    },
+    "_fw3_cinema": {
+      "domains": ["mzkznsy.cn"]
     }
   }
 }
