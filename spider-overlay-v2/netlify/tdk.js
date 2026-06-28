@@ -35,14 +35,22 @@
     return location.hostname.replace(/^www\./, '');
   }
 
-  // 简单哈希
-  function hashCode(s) {
-    var h = 0;
-    for (var i = 0; i < s.length; i++) {
-      h = ((h << 5) - h) + s.charCodeAt(i);
-      h = h >>> 0;
+  // 用 URL 路径做种子，同一个路径永远算同一个数
+  function seededRandom(seed) {
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      var c = seed.charCodeAt(i);
+      hash = ((hash << 5) - hash) + c;
+      hash = hash >>> 0; // 32-bit unsigned int
     }
-    return h;
+    return hash / 4294967295;
+  }
+
+  function pickFromPool(pool, seed) {
+    if (!pool || !pool.length) return '';
+    var idx = Math.floor(seededRandom(seed) * pool.length);
+    if (idx >= pool.length) idx = 0;
+    return pool[idx];
   }
 
   // ======================== 应用 TDK ========================
@@ -51,6 +59,7 @@
     var domain = getDomain();
     var found = false;
 
+    // 找当前域名是否属于某个项目
     var projects = config.projects || {};
     var keys = Object.keys(projects);
     for (var i = 0; i < keys.length; i++) {
@@ -61,35 +70,35 @@
       }
     }
 
+    // 当前域名没配置 → 跳过
     if (!found) return;
 
+    // 共用 tdkPool
     var pool = config.tdkPool || {};
-    if (!pool.titlePool || !pool.titlePool.length) return;
+    var seed = location.pathname + location.search;
 
-    // 每个域名一个随机偏移，首次随机，之后不变
-    var offsetKey = '__tdk_offset_' + domain;
-    var offset;
-    try {
-      var saved = localStorage.getItem(offsetKey);
-      if (saved !== null) {
-        offset = parseInt(saved, 10);
-      } else {
-        offset = Math.floor(Math.random() * 99999);
-        try { localStorage.setItem(offsetKey, offset); } catch(e) {}
+    // 关键词标签库：从 keywordTagPool 随机抽 11 个（k0~k10），同一URL固化
+    var ktags = [];
+    var ktp = pool.keywordTagPool || [];
+    if (ktp.length) {
+      for (var j = 0; j <= 10; j++) {
+        var ks = seed + '__k' + j;
+        ktags.push(pickFromPool(ktp, ks));
       }
-    } catch(e) {
-      offset = Math.floor(Math.random() * 99999);
     }
 
-    // 用 pathname 哈希 + 偏移量 → 永远固定的下标
-    var pathHash = hashCode(location.pathname);
-    var ti = (pathHash + offset) % pool.titlePool.length;
-    var di = (pathHash + offset + 1) % pool.descPool.length;
-    var ki = (pathHash + offset + 2) % pool.keywordsPool.length;
+    // 替换 title / desc 中的 {k0}~{k10} 标签（正则一次性匹配，避免 {k10} 被 {k1} 误伤）
+    function replaceTags(str) {
+      if (!str || !ktags.length) return str;
+      return str.replace(/\{k(\d+)\}/g, function(match, num) {
+        var idx = parseInt(num, 10);
+        return (idx < ktags.length && ktags[idx]) ? ktags[idx] : match;
+      });
+    }
 
-    var title = pool.titlePool[ti] || '';
-    var desc = pool.descPool[di] || '';
-    var keywords = pool.keywordsPool[ki] || '';
+    var title = replaceTags(pickFromPool(pool.titlePool, seed));
+    var desc = replaceTags(pickFromPool(pool.descPool, seed));
+    var keywords = replaceTags(pickFromPool(pool.keywordsPool, seed));
 
     if (title) document.title = title;
 
@@ -116,7 +125,7 @@
 
   // ======================== 加载（带缓存） ========================
 
-  var CACHE_KEY = '__tdk_cfg_v3__';
+  var CACHE_KEY = '__tdk_cfg__';
   var CACHE_TTL = 5 * 60 * 1000; // 5 分钟
 
   function refreshCache() {
