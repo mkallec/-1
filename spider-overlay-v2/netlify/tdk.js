@@ -78,11 +78,12 @@
     var seed = location.pathname + location.search;
 
     // 关键词标签库：从 keywordTagPool 随机抽 11 个（k0~k10），同一URL固化
+    // j 放种子前面，让 hash 对差异敏感，避免所有 k 抽到同一个词
     var ktags = [];
     var ktp = pool.keywordTagPool || [];
     if (ktp.length) {
       for (var j = 0; j <= 10; j++) {
-        var ks = seed + '__k' + j;
+        var ks = j + '___' + seed;
         ktags.push(pickFromPool(ktp, ks));
       }
     }
