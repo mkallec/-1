@@ -102,11 +102,39 @@
     }
   }
 
-  // ======================== 加载 ========================
+  // ======================== 加载（带缓存） ========================
 
-  fetch(CONFIG_URL, { cache: 'no-cache' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (cfg) { if (cfg) applyTDK(cfg); })
-    .catch(function () {});
+  var CACHE_KEY = '__tdk_cfg__';
+  var CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+
+  function loadConfig() {
+    // 读缓存
+    try {
+      var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+      if (cached && cached._ts && (Date.now() - cached._ts < CACHE_TTL)) {
+        applyTDK(cached);
+        return;
+      }
+    } catch(e) {}
+
+    // fetch
+    fetch(CONFIG_URL, { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (cfg) {
+        if (!cfg) return;
+        cfg._ts = Date.now();
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(cfg)); } catch(e) {}
+        applyTDK(cfg);
+      })
+      .catch(function () {
+        // 降级使用过期缓存
+        try {
+          var old = JSON.parse(localStorage.getItem(CACHE_KEY));
+          if (old) applyTDK(old);
+        } catch(e) {}
+      });
+  }
+
+  loadConfig();
 
 })();
