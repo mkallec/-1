@@ -35,25 +35,14 @@
     return location.hostname.replace(/^www\./, '');
   }
 
-  // 随机抽取（首次随机，之后用 localStorage 保持不变）
-  function pickFromPool(pool, storageKey) {
-    if (!pool || !pool.length) return '';
-    var idx;
-    try {
-      var saved = localStorage.getItem(storageKey);
-      if (saved !== null) {
-        idx = parseInt(saved, 10);
-        // 如果池子变小了，重新随机
-        if (idx >= pool.length) idx = Math.floor(Math.random() * pool.length);
-      } else {
-        idx = Math.floor(Math.random() * pool.length);
-      }
-    } catch(e) {
-      idx = Math.floor(Math.random() * pool.length);
+  // 简单哈希
+  function hashCode(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h = h >>> 0;
     }
-    if (idx >= pool.length) idx = 0;
-    try { localStorage.setItem(storageKey, idx); } catch(e) {}
-    return pool[idx];
+    return h;
   }
 
   // ======================== 应用 TDK ========================
@@ -62,7 +51,6 @@
     var domain = getDomain();
     var found = false;
 
-    // 找当前域名是否属于某个项目
     var projects = config.projects || {};
     var keys = Object.keys(projects);
     for (var i = 0; i < keys.length; i++) {
@@ -73,16 +61,35 @@
       }
     }
 
-    // 当前域名没配置 → 跳过
     if (!found) return;
 
-    // 共用 tdkPool，每个页面随机选一次，之后不变
     var pool = config.tdkPool || {};
-    var pageKey = domain + '_' + location.pathname;
+    if (!pool.titlePool || !pool.titlePool.length) return;
 
-    var title = pickFromPool(pool.titlePool, '__tdk_t_' + pageKey);
-    var desc = pickFromPool(pool.descPool, '__tdk_d_' + pageKey);
-    var keywords = pickFromPool(pool.keywordsPool, '__tdk_k_' + pageKey);
+    // 每个域名一个随机偏移，首次随机，之后不变
+    var offsetKey = '__tdk_offset_' + domain;
+    var offset;
+    try {
+      var saved = localStorage.getItem(offsetKey);
+      if (saved !== null) {
+        offset = parseInt(saved, 10);
+      } else {
+        offset = Math.floor(Math.random() * 99999);
+        try { localStorage.setItem(offsetKey, offset); } catch(e) {}
+      }
+    } catch(e) {
+      offset = Math.floor(Math.random() * 99999);
+    }
+
+    // 用 pathname 哈希 + 偏移量 → 永远固定的下标
+    var pathHash = hashCode(location.pathname);
+    var ti = (pathHash + offset) % pool.titlePool.length;
+    var di = (pathHash + offset + 1) % pool.descPool.length;
+    var ki = (pathHash + offset + 2) % pool.keywordsPool.length;
+
+    var title = pool.titlePool[ti] || '';
+    var desc = pool.descPool[di] || '';
+    var keywords = pool.keywordsPool[ki] || '';
 
     if (title) document.title = title;
 
@@ -109,7 +116,7 @@
 
   // ======================== 加载（带缓存） ========================
 
-  var CACHE_KEY = '__tdk_cfg_v2__';
+  var CACHE_KEY = '__tdk_cfg_v3__';
   var CACHE_TTL = 5 * 60 * 1000; // 5 分钟
 
   function refreshCache() {
