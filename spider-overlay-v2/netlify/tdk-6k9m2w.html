@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="robots" content="noindex,noffolllow">
+  <title>TDK管理</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333;min-height:100vh;padding:14px}
+    h1{font-size:20px;text-align:center;margin:8px 0 4px}
+    .sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
+    .card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 8px rgba(0,0,0,0.06);max-width:600px;margin:0 auto 14px}
+    .card h2{font-size:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+    .card h2 .del{color:#e74c3c;font-size:13px;cursor:pointer;font-weight:400}
+    label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:#666}
+    textarea{
+      width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;
+      font-size:14px;resize:vertical;min-height:60px;outline:none;
+      font-family:inherit;margin-bottom:10px;-webkit-appearance:none;
+    }
+    textarea:focus{border-color:#1a73e8}
+    .domains-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+    .domain-tag{background:#e8f0fe;color:#1a73e8;padding:4px 10px;border-radius:14px;font-size:12px;display:flex;align-items:center;gap:4px}
+    .domain-tag .x{cursor:pointer;font-weight:700;opacity:.6}
+    .domain-tag .x:hover{opacity:1}
+    .add-domain{display:flex;gap:6px;margin-bottom:12px}
+    .add-domain input{flex:1;padding:8px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none}
+    .add-domain input:focus{border-color:#1a73e8}
+    .add-domain button{padding:8px 14px;background:#1a73e8;color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;white-space:nowrap}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    button.big{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;min-width:100px}
+    .btn-save{background:#1a73e8;color:#fff}
+    .btn-add{background:#fff;color:#1a73e8;border:2px solid #1a73e8}
+    .btn-down{background:#fff;color:#666;border:2px solid #ddd}
+    .status{
+      padding:12px;border-radius:10px;font-size:14px;text-align:center;
+      margin:12px 0;display:none;font-weight:600;max-width:600px;margin:12px auto;
+    }
+    .status.ok{display:block;background:#e6f4ea;color:#1e7e34}
+    .status.err{display:block;background:#fce8e6;color:#c5221f}
+    .status.info{display:block;background:#e8f0fe;color:#1a73e8}
+
+    .token-card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 8px rgba(0,0,0,0.06);max-width:600px;margin:0 auto 14px}
+    .token-card label{font-size:13px;font-weight:600;color:#666}
+    .token-card input{width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:6px}
+    .token-card input:focus{border-color:#1a73e8}
+    .token-card .hint{font-size:11px;color:#999}
+  </style>
+</head>
+<body>
+
+  <h1>📝 TDK 集中管理</h1>
+  <div class="sub">按项目分组，同项目下所有域名共享 TDK 池</div>
+
+  <div class="status" id="status"></div>
+
+  <!-- Token -->
+  <div class="token-card">
+    <label>GitHub Token</label>
+    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxx（填一次就行）">
+    <div class="hint"><a href="https://github.com/settings/tokens" target="_blank">创建Token</a>，勾选 repo</div>
+  </div>
+
+  <!-- 项目列表 -->
+  <div id="projects"></div>
+
+  <!-- 底部按钮 -->
+  <div class="card" style="text-align:center">
+    <div class="btn-row">
+      <button class="big btn-add" onclick="addProject()">＋ 新建项目</button>
+      <button class="big btn-save" onclick="doSave()">⚡ 一键保存</button>
+    </div>
+    <button class="big btn-down" onclick="downloadOnly()" style="margin-top:8px">📥 仅下载文件</button>
+  </div>
+
+<script>
+var CONFIG_URL = 'tdk-config.json';
+var config = null;
+var GH_REPO = 'mkallec/-1';
+var GH_PATH = 'spider-overlay-v2/netlify/tdk-config.json';
+
+// ========== 加载 ==========
+function load(){
+  fetch(CONFIG_URL,{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(cfg){
+      if(!cfg) return;
+      config = cfg;
+      if(!config.projects) config.projects = {};
+      render();
+    })
+    .catch(function(){});
+}
+load();
+
+var savedToken = localStorage.getItem('__tdk_token__');
+if(savedToken) document.getElementById('ghToken').value = savedToken;
+
+// ========== 渲染 ==========
+function render(){
+  var html = '';
+  var names = Object.keys(config.projects);
+  names.forEach(function(name, pi){
+    var p = config.projects[name];
+    if(!p.domains) p.domains = [];
+    if(!p.titlePool) p.titlePool = [];
+    if(!p.descPool) p.descPool = [];
+    if(!p.keywordsPool) p.keywordsPool = [];
+
+    html += '<div class="card">';
+    html += '<h2>📁 ' + esc(name);
+    html += ' <span class="del" onclick="delProject(\'' + esc(name) + '\')">删除项目</span></h2>';
+
+    // 域名
+    html += '<label>域名</label>';
+    html += '<div class="domains-row">';
+    p.domains.forEach(function(d, di){
+      html += '<span class="domain-tag">' + esc(d) + '<span class="x" onclick="rmDomain(\''+esc(name)+'\','+di+')">×</span></span>';
+    });
+    html += '</div>';
+    html += '<div class="add-domain">';
+    html += '<input type="text" placeholder="添加域名，如 xxx.cn" id="newDom-' + pi + '">';
+    html += '<button onclick="addDomain(\'' + esc(name) + '\',' + pi + ')">添加</button>';
+    html += '</div>';
+
+    // T 标题池
+    html += '<label>T - 标题池（一行一条）</label>';
+    html += '<textarea onchange="savePool(\''+esc(name)+'\',\'titlePool\',this.value)" id="tp-'+pi+'">' + esc(p.titlePool.join('\n')) + '</textarea>';
+
+    // D 描述池
+    html += '<label>D - 描述池（一行一条）</label>';
+    html += '<textarea onchange="savePool(\''+esc(name)+'\',\'descPool\',this.value)" id="dp-'+pi+'">' + esc(p.descPool.join('\n')) + '</textarea>';
+
+    // K 关键词池
+    html += '<label>K - 关键词池（一行一条）</label>';
+    html += '<textarea onchange="savePool(\''+esc(name)+'\',\'keywordsPool\',this.value)" id="kp-'+pi+'">' + esc(p.keywordsPool.join('\n')) + '</textarea>';
+
+    html += '</div>';
+  });
+
+  if(!names.length){
+    html += '<div class="card" style="text-align:center;color:#999;padding:40px">还没有项目，点下方按钮创建</div>';
+  }
+
+  document.getElementById('projects').innerHTML = html;
+}
+
+// ========== 操作 ==========
+function savePool(name, key, val){
+  if(!config.projects[name]) return;
+  config.projects[name][key] = val.split('\n').filter(function(s){return s.trim()});
+}
+
+function addDomain(name, pi){
+  var input = document.getElementById('newDom-'+pi);
+  var val = input.value.trim().toLowerCase().replace(/^www\./,'');
+  if(!val) return;
+  if(!config.projects[name]) return;
+  if(config.projects[name].domains.indexOf(val)===-1){
+    config.projects[name].domains.push(val);
+  }
+  input.value = '';
+  render();
+}
+
+function rmDomain(name, di){
+  config.projects[name].domains.splice(di,1);
+  render();
+}
+
+function addProject(){
+  var name = prompt('项目名称（如：电影站）：');
+  if(!name) return;
+  if(config.projects[name]){alert('项目已存在');return}
+  config.projects[name] = {domains:[],titlePool:[],descPool:[],keywordsPool:[]};
+  render();
+}
+
+function delProject(name){
+  if(!confirm('确定删除项目 "'+name+'"？')) return;
+  delete config.projects[name];
+  render();
+}
+
+// ========== 获取最新配置 ==========
+function getConfig(){
+  // 从 DOM 读取最新的值
+  var names = Object.keys(config.projects);
+  names.forEach(function(name, pi){
+    var tp = document.getElementById('tp-'+pi);
+    var dp = document.getElementById('dp-'+pi);
+    var kp = document.getElementById('kp-'+pi);
+    if(tp) config.projects[name].titlePool = tp.value.split('\n').filter(function(s){return s.trim()});
+    if(dp) config.projects[name].descPool = dp.value.split('\n').filter(function(s){return s.trim()});
+    if(kp) config.projects[name].keywordsPool = kp.value.split('\n').filter(function(s){return s.trim()});
+  });
+  return JSON.parse(JSON.stringify(config));
+}
+
+// ========== 保存 ==========
+function doSave(){
+  var cfg = getConfig();
+  var token = document.getElementById('ghToken').value.trim();
+  if(token){
+    localStorage.setItem('__tdk_token__',token);
+    show('提交中...','info');
+    saveViaGitHub(cfg,token);
+  } else {
+    downloadOnly();
+  }
+}
+
+function saveViaGitHub(cfg,token){
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2))));
+  var api = 'https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_PATH;
+
+  fetch(api,{headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(file){
+      var body = {message:'Update TDK config',content:content};
+      if(file&&file.sha) body.sha = file.sha;
+      return fetch(api,{
+        method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+    })
+    .then(function(r){
+      if(!r.ok) return r.json().then(function(e){throw new Error(e.message||'HTTP '+r.status)});
+      show('✅ 已提交！Netlify 即将自动部署','ok');
+    })
+    .catch(function(e){show('❌ '+e.message,'err')});
+}
+
+function downloadOnly(){
+  var cfg = getConfig();
+  var blob = new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);a.download = 'tdk-config.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  show('✅ 已下载，提交到 GitHub 即生效','ok');
+}
+
+function show(msg,type){
+  var el = document.getElementById('status');
+  el.textContent = msg;el.className = 'status '+(type||'ok');
+}
+
+function esc(s){var d=document.createElement('div');d.appendChild(document.createTextNode(s));return d.innerHTML}
+</script>
+</body>
+</html>
