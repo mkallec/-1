@@ -41,9 +41,9 @@
     for (var i = 0; i < seed.length; i++) {
       var c = seed.charCodeAt(i);
       hash = ((hash << 5) - hash) + c;
-      hash = hash & hash; // Convert to 32bit int
+      hash = hash >>> 0; // 32-bit unsigned int
     }
-    return Math.abs(hash) / 2147483647;
+    return hash / 4294967295;
   }
 
   function pickFromPool(pool, seed) {
@@ -107,17 +107,25 @@
   var CACHE_KEY = '__tdk_cfg__';
   var CACHE_TTL = 5 * 60 * 1000; // 5 分钟
 
+  function refreshCache() {
+    fetch(CONFIG_URL, { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (cfg) {
+        if (cfg) { cfg._ts = Date.now(); try { localStorage.setItem(CACHE_KEY, JSON.stringify(cfg)); } catch(e) {} }
+      })
+      .catch(function () {});
+  }
+
   function loadConfig() {
-    // 读缓存
     try {
       var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
       if (cached && cached._ts && (Date.now() - cached._ts < CACHE_TTL)) {
         applyTDK(cached);
+        refreshCache(); // 后台静默更新
         return;
       }
     } catch(e) {}
 
-    // fetch
     fetch(CONFIG_URL, { cache: 'no-cache' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (cfg) {
@@ -127,7 +135,6 @@
         applyTDK(cfg);
       })
       .catch(function () {
-        // 降级使用过期缓存
         try {
           var old = JSON.parse(localStorage.getItem(CACHE_KEY));
           if (old) applyTDK(old);
