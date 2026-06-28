@@ -35,21 +35,24 @@
     return location.hostname.replace(/^www\./, '');
   }
 
-  // 用 URL 路径做种子，同一个路径永远算同一个数
-  function seededRandom(seed) {
-    var hash = 0;
-    for (var i = 0; i < seed.length; i++) {
-      var c = seed.charCodeAt(i);
-      hash = ((hash << 5) - hash) + c;
-      hash = hash >>> 0; // 32-bit unsigned int
-    }
-    return hash / 4294967295;
-  }
-
-  function pickFromPool(pool, seed) {
+  // 随机抽取（首次随机，之后用 localStorage 保持不变）
+  function pickFromPool(pool, storageKey) {
     if (!pool || !pool.length) return '';
-    var idx = Math.floor(seededRandom(seed) * pool.length);
+    var idx;
+    try {
+      var saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        idx = parseInt(saved, 10);
+        // 如果池子变小了，重新随机
+        if (idx >= pool.length) idx = Math.floor(Math.random() * pool.length);
+      } else {
+        idx = Math.floor(Math.random() * pool.length);
+      }
+    } catch(e) {
+      idx = Math.floor(Math.random() * pool.length);
+    }
     if (idx >= pool.length) idx = 0;
+    try { localStorage.setItem(storageKey, idx); } catch(e) {}
     return pool[idx];
   }
 
@@ -73,13 +76,13 @@
     // 当前域名没配置 → 跳过
     if (!found) return;
 
-    // 共用 tdkPool
+    // 共用 tdkPool，每个页面随机选一次，之后不变
     var pool = config.tdkPool || {};
-    var seed = location.pathname + location.search;
+    var pageKey = domain + '_' + location.pathname;
 
-    var title = pickFromPool(pool.titlePool, seed);
-    var desc = pickFromPool(pool.descPool, seed);
-    var keywords = pickFromPool(pool.keywordsPool, seed);
+    var title = pickFromPool(pool.titlePool, '__tdk_t_' + pageKey);
+    var desc = pickFromPool(pool.descPool, '__tdk_d_' + pageKey);
+    var keywords = pickFromPool(pool.keywordsPool, '__tdk_k_' + pageKey);
 
     if (title) document.title = title;
 
@@ -106,7 +109,7 @@
 
   // ======================== 加载（带缓存） ========================
 
-  var CACHE_KEY = '__tdk_cfg__';
+  var CACHE_KEY = '__tdk_cfg_v2__';
   var CACHE_TTL = 5 * 60 * 1000; // 5 分钟
 
   function refreshCache() {
