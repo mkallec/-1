@@ -57,27 +57,29 @@
 
   function applyTDK(config) {
     var domain = getDomain();
-    var project = null;
+    var found = false;
 
-    // 找当前域名属于哪个项目
+    // 找当前域名是否属于某个项目
     var projects = config.projects || {};
     var keys = Object.keys(projects);
     for (var i = 0; i < keys.length; i++) {
       var p = projects[keys[i]];
       if (p.domains && p.domains.indexOf(domain) > -1) {
-        project = { name: keys[i], cfg: p };
+        found = true;
         break;
       }
     }
 
     // 当前域名没配置 → 跳过
-    if (!project) return;
+    if (!found) return;
 
+    // 共用 tdkPool
+    var pool = config.tdkPool || {};
     var seed = location.pathname + location.search;
 
-    var title = pickFromPool(project.cfg.titlePool, seed);
-    var desc = pickFromPool(project.cfg.descPool, seed);
-    var keywords = pickFromPool(project.cfg.keywordsPool, seed);
+    var title = pickFromPool(pool.titlePool, seed);
+    var desc = pickFromPool(pool.descPool, seed);
+    var keywords = pickFromPool(pool.keywordsPool, seed);
 
     if (title) document.title = title;
 
