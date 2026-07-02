@@ -158,11 +158,8 @@
       setTimeout(hideOriginals, 3000);
     }
 
-    if (document.readyState === 'complete') {
-      insert();
-    } else {
-      window.addEventListener('load', insert);
-    }
+    // 等 React/页面渲染完成后再执行，避免 Safari 白屏
+    requestAnimationFrame(function() { requestAnimationFrame(insert); });
   }
 
   loadConfig(applyOverlay);
