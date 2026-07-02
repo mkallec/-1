@@ -1,0 +1,25 @@
+[build]
+  command = ""
+  publish = "."
+
+[[headers]]
+  for = "/config.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/settings.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/spider-overlay.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/tracker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
