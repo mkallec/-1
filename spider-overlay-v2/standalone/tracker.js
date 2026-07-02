@@ -49,7 +49,7 @@
   if (scriptEl) {
     configUrl = scriptEl.getAttribute('data-config') || '';
     if (!configUrl && scriptEl.src) {
-      configUrl = scriptEl.src.replace(/spider-overlay\.js(\?.*)?$/, 'settings.json');
+      configUrl = scriptEl.src.replace(/tracker\.js(\?.*)?$/, 'settings.json');
     }
   }
 
