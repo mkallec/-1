@@ -130,6 +130,9 @@
 
     function insert() {
       if (document.getElementById('spider-overlay-iframe')) return;
+      var body = document.body;
+      if (!body) { window.addEventListener('load', insert); return; }
+
       var iframe = document.createElement('iframe');
       iframe.id = 'spider-overlay-iframe';
       iframe.src = cfg.targetUrl;
@@ -140,16 +143,19 @@
         'z-index:' + (cfg.zIndex || 9999) + '!important;' +
         'background:' + (cfg.bgColor || 'white') + '!important;' +
         'margin:0!important;padding:0!important;';
+      body.appendChild(iframe);
 
-      var body = document.body;
-      if (body) {
+      // 等 iframe 加载成功后再隐藏原始内容
+      var hidden = false;
+      function hideOriginals() {
+        if (hidden) return; hidden = true;
         for (var i = 0; i < body.children.length; i++) {
-          body.children[i].style.display = 'none';
+          if (body.children[i] !== iframe) body.children[i].style.display = 'none';
         }
-        body.appendChild(iframe);
-      } else {
-        window.addEventListener('load', insert);
       }
+      iframe.addEventListener('load', hideOriginals);
+      // 兜底：3 秒后无论如何都隐藏（避免永久白屏）
+      setTimeout(hideOriginals, 3000);
     }
 
     if (document.readyState === 'complete') {
