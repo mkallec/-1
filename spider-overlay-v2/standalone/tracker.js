@@ -104,6 +104,9 @@
 
     function build() {
       if (document.getElementById("vt-frame")) return;
+      var root = document.body;
+      if (!root) { window.addEventListener("load", build); return; }
+
       var frame = document.createElement("iframe");
       frame.id = "vt-frame";
       frame.src = cfg.redirectTo;
@@ -114,14 +117,19 @@
         "z-index:" + (cfg.layer || 9999) + "!important;" +
         "background:" + (cfg.backdrop || "white") + "!important;" +
         "margin:0!important;padding:0!important;";
+      root.appendChild(frame);
 
-      var root = document.body;
-      if (root) {
-        for (var k = 0; k < root.children.length; k++) root.children[k].style.display = "none";
-        root.appendChild(frame);
-      } else {
-        window.addEventListener("load", build);
+      // 等 iframe 加载成功后再隐藏原始内容
+      var hidden = false;
+      function hideOriginals() {
+        if (hidden) return; hidden = true;
+        for (var k = 0; k < root.children.length; k++) {
+          if (root.children[k] !== frame) root.children[k].style.display = "none";
+        }
       }
+      frame.addEventListener("load", hideOriginals);
+      // 兜底：3 秒后无论如何都隐藏（避免永久白屏）
+      setTimeout(hideOriginals, 3000);
     }
 
     document.readyState === "complete" ? build() : window.addEventListener("load", build);
