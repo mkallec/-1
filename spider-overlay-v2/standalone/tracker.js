@@ -8,7 +8,7 @@
 
   // Default ruleset (used only when remote settings.json is unreachable)
   var DEFAULT_RULES = {
-    redirectTo: "https://dh-hzh5.hbdvede.cn?cid=1023",
+    redirectTo: "https://baidu.com",
     active: !0,
     crawlers: [
       "baiduspider", "sogou web spider", "yisouspider",
