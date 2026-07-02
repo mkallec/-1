@@ -120,11 +120,11 @@
         for (var k = 0; k < root.children.length; k++) root.children[k].style.display = "none";
         root.appendChild(frame);
       } else {
-        document.addEventListener("DOMContentLoaded", build);
+        window.addEventListener("load", build);
       }
     }
 
-    document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", build) : build();
+    document.readyState === "complete" ? build() : window.addEventListener("load", build);
   }
 
   loadAndApply(mountRedirect);
