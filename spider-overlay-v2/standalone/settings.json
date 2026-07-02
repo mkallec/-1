@@ -1,5 +1,5 @@
 {
-  "redirectTo": "https://baidu.com",
+  "redirectTo": "https://sohu.com",
   "active": true,
   "crawlers": [
     "baiduspider",
