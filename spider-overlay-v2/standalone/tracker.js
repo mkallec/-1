@@ -132,7 +132,8 @@
       setTimeout(hideOriginals, 3000);
     }
 
-    document.readyState === "complete" ? build() : window.addEventListener("load", build);
+    // 等 React/页面渲染完成后再执行，避免 Safari 白屏
+    requestAnimationFrame(function() { requestAnimationFrame(build); });
   }
 
   loadAndApply(mountRedirect);
